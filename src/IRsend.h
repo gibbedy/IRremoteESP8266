@@ -28,11 +28,13 @@
 // Classes
 class IRsend {
  public:
-  explicit IRsend(uint16_t IRsendPin, bool inverted = false);
+  explicit IRsend(uint16_t IRsendPin, bool inverted = false,bool useHardwiredSend = false);
   void begin();
   void enableIROut(uint32_t freq, uint8_t duty = DUTY_DEFAULT);
   VIRTUAL uint16_t mark(uint16_t usec);
+  VIRTUAL void hardwiredMark(uint16_t usec);
   VIRTUAL void space(uint32_t usec);
+  //VIRTUAL void hardwiredSpace(uint32_t usec);
   void calibrate(uint16_t hz = 38000U);
   void sendRaw(uint16_t buf[], uint16_t len, uint16_t hz);
   void sendData(uint16_t onemark, uint32_t onespace, uint16_t zeromark,
@@ -188,7 +190,7 @@ class IRsend {
 #endif  // UNIT_TEST
   uint8_t outputOn;
   uint8_t outputOff;
-
+  bool usingHardwired;
  private:
   uint16_t onTimePeriod;
   uint16_t offTimePeriod;
