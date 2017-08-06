@@ -29,10 +29,13 @@
 //               Setting this to something other than the default could
 //               easily destroy your IR LED if you are overdriving it.
 //               Unless you *REALLY* know what you are doing, don't change this.
+//	useHardwiredSend: Takes out high freq carrier signal or whatever its called so you can drive 
+//					  your IR device by directly conncting to its IR receiver pin (remove IR reciever for parts box)
 // Returns:
 //   An IRsend object.
-IRsend::IRsend(uint16_t IRsendPin, bool inverted) : IRpin(IRsendPin),
+IRsend::IRsend(uint16_t IRsendPin, bool inverted,bool useHardwiredSend) : IRpin(IRsendPin),
     periodOffset(PERIOD_OFFSET) {
+ 
   if (inverted) {
     outputOn = LOW;
     outputOff = HIGH;
@@ -40,6 +43,11 @@ IRsend::IRsend(uint16_t IRsendPin, bool inverted) : IRpin(IRsendPin),
     outputOn = HIGH;
     outputOff = LOW;
   }
+  if(useHardwiredSend)
+  {
+	  usingHardwired=true;
+  }
+  
 }
 
 // Enable the pin for output.
@@ -112,6 +120,14 @@ void IRsend::enableIROut(uint32_t freq, uint8_t duty) {
 // Ref:
 //   https://www.analysir.com/blog/2017/01/29/updated-esp8266-nodemcu-backdoor-upwm-hack-for-ir-signals/
 uint16_t IRsend::mark(uint16_t usec) {
+	if(usingHardwired)
+	{
+		hardwiredMark(usec);
+		return 1;
+		
+	}
+	else
+	{
   uint16_t counter = 0;
   IRtimer usecTimer = IRtimer();
   // Cache the time taken so far. This saves us calling time, and we can be
@@ -128,7 +144,9 @@ uint16_t IRsend::mark(uint16_t usec) {
 #endif
     counter++;
     if (elapsed + onTimePeriod >= usec)
+	{
       return counter;  // LED is now off & we've passed our allotted time.
+	}
     // Wait for the lesser of the rest of the duty cycle, or the time remaining.
 #ifndef UNIT_TEST
     delayMicroseconds(std::min(usec - elapsed - onTimePeriod,
@@ -137,6 +155,33 @@ uint16_t IRsend::mark(uint16_t usec) {
     elapsed = usecTimer.elapsed();  // Update & recache the actual elapsed time.
   }
   return counter;
+	}
+}
+
+// Turn on the IR LED for the given period (usec)
+//
+// Args:
+//   usec: The period of time to turn on the IR LED for, in microseconds.
+// Returns:
+//   nada
+//
+// Note:
+//   I got some cheap RGB LED's that I want to drive from an arduino or sonoff or whatever.
+//   Instead of wiring up a ir led to transmit and be de-modulated and decoded I just remove
+//   the IR receiver on the device send it the signal for decoding only.
+
+void IRsend::hardwiredMark(uint16_t usec) {
+  IRtimer usecTimer = IRtimer();
+  // Cache the time taken so far. This saves us calling time, and we can be
+  // assured that we can't have odd math problems. i.e. unsigned under/overflow.
+  uint32_t elapsed = usecTimer.elapsed();
+  
+  digitalWrite(IRpin, outputOn);  // Turn the LED on.
+  while (elapsed < usec) {  // Loop until we've met/exceeded our required time.
+          elapsed = usecTimer.elapsed();  // Update & recache the actual elapsed time.      
+  }
+  
+  digitalWrite(IRpin, outputOff);  // Turn the LED off. 
 }
 
 // Turn the pin (LED) off for a given time.
