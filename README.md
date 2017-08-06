@@ -1,3 +1,6 @@
+Reminder to me:
+Forked so I can modify for hardwired connection to IR devices. The idea being that I can use this in a sonoff to control an IR controlled device (cheap rgb floodlights). The sonoff wont be driving a IR led but rather wiring derectly to the device IR receiver input.
+
 # IRremote ESP8266 Library
 
 [![Build Status](https://travis-ci.org/markszabo/IRremoteESP8266.svg?branch=master)](https://travis-ci.org/markszabo/IRremoteESP8266)
